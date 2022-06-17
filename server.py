@@ -1,12 +1,7 @@
 from datetime import datetime
-import string
-import json
-from urllib import response
-
 from fastapi import FastAPI
-from pydantic import Json
 from pymongo import MongoClient
-from bson import BSON, ObjectId
+from bson import ObjectId
 from models.FluxosDeHorasModel import Fluxosdehorasmodel
 from models.FuncionariosModel import FuncionariosModel
 
