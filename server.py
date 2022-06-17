@@ -10,7 +10,6 @@ app = FastAPI()
 url = 'mongodb+srv://marceloakohlhase:6nZdVHRyJp6yBLDK@reconhecimento.dav0i6n.mongodb.net/?retryWrites=true&w=majority'
 Connection = MongoClient(url).reconhecimento
 
-
 @app.get("/")
 async def home():
     return {"message": "Hello World"}
