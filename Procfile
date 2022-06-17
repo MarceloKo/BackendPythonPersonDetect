@@ -1,1 +1,1 @@
-web: uvicorn server:app --host=localhost --port=3000
+web: uvicorn server:app --workers 4
