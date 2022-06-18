@@ -2,8 +2,10 @@ from datetime import datetime
 from fastapi import FastAPI
 from pymongo import MongoClient
 from bson import ObjectId
-from models.FluxosDeHorasModel import Fluxosdehorasmodel
-from models.FuncionariosModel import FuncionariosModel
+from models.QuartoFluxo import Quartofluxomodel
+from models.QuartoFluxoAcessosModel import Quartofluxoacessosmodel
+from models.QuartoFluxoStatusModel import Quartofluxostatusmodel
+from models.CargoModel import CargoModel
 
 from models.QuartoModel import QuartoModel
 app = FastAPI()
@@ -33,22 +35,22 @@ async def POST(quarto: QuartoModel):
                 }
     else:
         Connection.Quartos.insert_one(
-            {"bedroom": quarto.bedroom, "occupied": quarto.occupied})
+            {"bedroom": quarto.bedroom})
         return {"message": "Quarto cadastrado com sucesso"}
 
 
 @app.put("/quarto")
-async def UPDATE(id: str, status: bool):
+async def UPDATE(id: str, bedroom: int):
     if(not id):
         return {"message": "Id não informado"}
-    if(not status):
-        return {"message": "Status não informado"}
+    if(not bedroom):
+        return {"message": "bedroom não informado"}
 
     response = Connection.Quartos.find_one({"_id": ObjectId(id)})
     if(response):
         Connection.Quartos.update_one({"_id": ObjectId(id)}, {
-                                      "$set": {"occupied": status}})
-        return {"message": "Atualizar Quarto"}
+                                      "$set": {"bedroom": bedroom}})
+        return {"message": "Quarto atualizado!"}
     else:
         return {"message": "Quarto não encontrado"}
 
@@ -68,120 +70,191 @@ async def DELETE(id: str):
         return {"message": "Quarto não encontrado"}
 
 
-########################## FUNCIONARIOS #########################
+########################## CARGOS #########################
 
-@app.get("/funcionario")
+@app.get("/cargo")
 async def GET():
-    response = Connection.Funcionarios.find()
+    response = Connection.Cargo.find()
     lista = (str(list(response)))
     return {"message": lista}
 
 
-@app.post("/funcionario")
-async def POST(funcionarios: FuncionariosModel):
+@app.post("/cargo")
+async def POST(cargos: CargoModel):
 
-    Connection.Funcionarios.insert_one(
-        {"Name": funcionarios.Name, "Function": funcionarios.Function, "CostPerHour": funcionarios.CostPerHour})
+    Connection.Cargo.insert_one(
+        {"Name": cargos.Name, "CostPerHour": cargos.CostPerHour})
     return {"message": "Adicionado com sucesso"}
 
 
-@app.put("/funcionario")
-async def UPDATE(id: str, costperhour: float, function: str):
+@app.put("/cargo")
+async def UPDATE(id: str, costperhour: float, name: str):
     if (not id):
         return {"message": "Id não informado"}
     elif (not costperhour):
         return {"message": "Custo por hora não informado"}
-    elif (not function):
-        return {"message": "Função não informada"}
+    elif (not name):
+        return {"message": "Nome da função não informada"}
 
-    Connection.Funcionarios.update_one({"_id": ObjectId(id)}, {
-                                       "$set": {"CostPerHour": costperhour, "Function": function}})
+    Connection.Cargo.update_one({"_id": ObjectId(id)}, {
+                                       "$set": {"CostPerHour": costperhour, "Name": name}})
 
-    return {"message": "Funcionario deletado"}
+    return {"message": "Cargo Atualizado"}
 
 
-@app.delete("/funcionario")
+@app.delete("/cargo")
 async def DELETE(id: str):
 
     if(not id):
         return {"message": "Id não informado"}
 
-    response = Connection.Funcionarios.find_one({"_id": ObjectId(id)})
+    response = Connection.Cargo.find_one({"_id": ObjectId(id)})
     if(response):
-        Connection.Funcionarios.delete_one({"_id": ObjectId(id)})
-        return {"message": "Funcionario deletado"}
+        Connection.Cargo.delete_one({"_id": ObjectId(id)})
+        return {"message": "Cargo deletado"}
     else:
-        return {"message": "Funcionario não encontrado"}
+        return {"message": "Cargo não encontrado"}
 
 
-#######################FLUXO DE HORAS#############################
 
-@app.get("/fluxodehoras")
+#######################QUARTO FLUXO STATUS#############################
+@app.get("/quartofluxostatus")
 async def GET():
-    response = Connection.Fluxodehoras.find()
+    response = Connection.QuartoFluxoStatus.find()
     lista = (str(list(response)))
     return {"message": lista}
 
 
-@app.post("/fluxodehoras")
-async def POST(fluxo: Fluxosdehorasmodel):
-    dateNow = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
-    data = {"RoomNumber": ObjectId(fluxo.RoomNumber),
-            "Employees": fluxo.Employees,
-            "EntryTime": fluxo.EntryTime,
-            "ExitTime": fluxo.ExitTime,
-            "Date": dateNow,
-            "TotalCostForTheRoom": fluxo.TotalCostForTheRoom,
-            }
-    Connection.Fluxodehoras.insert_one(data)
-    return {"message": "Adicionado com sucesso"}
+@app.post("/quartofluxostatus")
+async def POST(status: Quartofluxostatusmodel):
+
+    Connection.QuartoFluxoStatus.insert_one(
+        {"description": status.description})
+    return {"message": "Adicionado com sucesso!"}
 
 
-@app.post("/fluxodehoras/incrementemployees")
-async def POST(id: str, employee: str):
-    if(not id):
-        return {"message": "Id da tabela de fluxo de horas não informado"}
-    elif(not employee):
-        return {"message": "Id do funcionário não informado"}
+@app.put("/quartofluxostatus")
+async def UPDATE(id: str, description: str):
+    if (not id):
+        return {"message": "Id não informado"}
+    elif (not description):
+        return {"message": "Nome do status não informado"}
 
-    response = Connection.Fluxodehoras.find_one({"_id": ObjectId(id)})
-    verifyUser = Connection.Funcionarios.find_one({"_id": ObjectId(employee)})
-    
-    if(not response):
-        return {"message": "Fluxo de horas não encontrado"}
-    elif(not verifyUser):
-        return {"message": "Funcionario não encontrado"}
-    for x in response["Employees"]:
-        if(str(x) == str(employee)):
-            return {"message": "Funcionario já cadastrado"}  
+    Connection.QuartoFluxoStatus.update_one({"_id": ObjectId(id)}, {
+                                       "$set": {"description": description}})
 
-    Connection.Fluxodehoras.update_one(
-        {"_id": ObjectId(id)}, {"$push": {"Employees": ObjectId(employee)}})
-
-    return {"message": "Adicionado com sucesso"}
-
-    # @app.put("/fluxodehoras")
-    # async def UPDATE(id:str,costperhour:float,function:str):
-    #     if (not id):
-    #         return {"message": "Id não informado"}
-    #     elif (not costperhour):
-    #         return {"message": "Custo por hora não informado"}
-    #     elif (not function):
-    #         return {"message": "Função não informada"}
-
-    #     Connection.Fluxodehoras.update_one({"_id": ObjectId(id)}, {"$set": {"CostPerHour":costperhour, "Function":function}})
-
-    #     return {"message": "Funcionario deletado"}
+    return {"message": "Atualizado com sucesso!"}
 
 
-@app.delete("/fluxodehoras")
+@app.delete("/quartofluxostatus")
 async def DELETE(id: str):
+
     if(not id):
         return {"message": "Id não informado"}
 
-    response = Connection.Fluxodehoras.find_one({"_id": ObjectId(id)})
+    response = Connection.QuartoFluxoStatus.find_one({"_id": ObjectId(id)})
+    print(response)
     if(response):
-        Connection.Fluxodehoras.delete_one({"_id": ObjectId(id)})
-        return {"message": "Fluxo de horas deletado"}
+        Connection.QuartoFluxoStatus.delete_one({"_id": ObjectId(id)})
+        return {"message": "Status deletado com sucesso!"}
     else:
-        return {"message": "Fluxo de horas não encontrado"}
+        return {"message": "Status não encontrado"}
+
+
+############################# QUARTO FLUXO #############################
+@app.get("/quartofluxo")
+async def GET():
+    response = Connection.QuartoFluxo.find()
+    lista = (str(list(response)))
+    return {"message": lista}
+
+
+@app.post("/quartofluxo")
+async def POST(quartofluxo: Quartofluxomodel):
+    dateNow = datetime.today().strftime('%d-%m-%Y')
+    data = {"idQuarto": ObjectId(quartofluxo.idQuarto),
+            "idQuartoFluxoStatus": ObjectId(quartofluxo.idQuartoFluxoStatus),
+            "Date": dateNow,
+            }
+    response = Connection.QuartoFluxo.find_one({"Date": dateNow})
+    if(response):
+        return {"message": "Fluxo do dia já cadastrado"}
+    
+    Connection.QuartoFluxo.insert_one(data)
+    return {"message": "Adicionado com sucesso"}
+
+
+@app.put("/quartofluxo")
+async def UPDATE(id:str,idQuartoFluxoStatus:str):
+    if (not id):
+        return {"message": "Id não informado"}
+    elif (not idQuartoFluxoStatus):
+        return {"message": "Id não informado"}
+
+    Connection.QuartoFluxo.update_one({"_id": ObjectId(id)}, {"$set": {"idQuartoFluxoStatus":ObjectId(idQuartoFluxoStatus)}})
+    return {"message": "Status do quarto alterado com sucesso"}
+
+
+@app.delete("/quartofluxo")
+async def DELETE(id: str):
+    if(not id):
+        return {"message": "Id não informado"}
+    response = Connection.QuartoFluxo.find_one({"_id": ObjectId(id)})
+    if(response):
+        Connection.QuartoFluxo.delete_one({"_id": ObjectId(id)})
+        return {"message": "Fluxo do quarto deletado com sucesso"}
+    else:
+        return {"message": "Fluxo do quarto não encontrado"}
+
+
+############################# QUARTO FLUXO ACESSOS#############################
+
+@app.get("/quartofluxoacessos")
+async def GET():
+    response = Connection.QuartoFluxoAcessos.find()
+    lista = (str(list(response)))
+    return {"message": lista}
+
+
+@app.post("/quartofluxoacessos")
+async def POST(quartofluxoacessos: Quartofluxoacessosmodel):
+    dateNow = datetime.today().strftime('%H:%M:%S')
+    data = {"idQuartoFluxo": ObjectId(quartofluxoacessos.idQuartoFluxo),
+            "idCargo": ObjectId(quartofluxoacessos.idCargo),
+            "idIARetangulo": quartofluxoacessos.idIARetangulo,
+            "dateInitial": dateNow,
+            "dateEnd": "",
+            "timeAllocation": "00:00:00",
+            }
+    
+    Connection.QuartoFluxoAcessos.insert_one(data)
+    return {"message": "Adicionado com sucesso"}
+
+
+@app.put("/quartofluxoacessos")
+async def UPDATE(idIARetangulo:str):
+    dateNow = datetime.today().strftime('%H:%M:%S')
+    if (not idIARetangulo):
+        return {"message": "Id não informado"}
+    response = Connection.QuartoFluxoAcessos.find_one({"idIARetangulo": int(idIARetangulo)})
+    if(response):
+        dateInitial = datetime.strptime(response["dateInitial"],"%H:%M:%S")
+        dateEnd = datetime.strptime(dateNow,"%H:%M:%S")
+        timeAllocation = dateEnd - dateInitial
+        Connection.QuartoFluxoAcessos.update_one({"idIARetangulo": int(idIARetangulo)}, {"$set": {"dateEnd": str(dateNow), "timeAllocation": str(timeAllocation)}})
+        return {"message": "Fluxo acesso do quarto alterado com sucesso"}
+    else:
+        return {"message": "idIARetangulo não encontrado"}
+
+
+
+@app.delete("/quartofluxoacessos")
+async def DELETE(id: str):
+    if(not id):
+        return {"message": "Id não informado"}
+    response = Connection.QuartoFluxoAcessos.find_one({"_id": ObjectId(id)})
+    if(response):
+        Connection.QuartoFluxoAcessos.delete_one({"_id": ObjectId(id)})
+        return {"message": "Fluxo do quarto deletado com sucesso"}
+    else:
+        return {"message": "Fluxo do quarto não encontrado"}

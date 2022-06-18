@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
-class FuncionariosModel(BaseModel):
+class CargoModel(BaseModel):
     Name: str
-    Function: str 
     CostPerHour: float
 
